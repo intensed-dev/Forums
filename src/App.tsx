@@ -71,18 +71,6 @@ function formatDate(date?: string) {
   });
 }
 
-function VerifiedBadge() {
-  return (
-    <span
-      className="verified"
-      title="Verified on Forums"
-      aria-label="Verified on Forums"
-    >
-      ✓
-    </span>
-  );
-}
-
 function PostCard({
   post,
   verifiedUsers
@@ -111,109 +99,117 @@ function PostCard({
   }
 
   return (
-    <article className="post">
-      <div className="post-avatar">
-        <img
-          src={
-            user?.avatar_url ??
-            githubAvatar(post.author)
-          }
-          alt={`${post.author} avatar`}
-        />
-      </div>
-
-      <div className="post-content">
-        <header className="post-header">
-          <div>
-            <a
-              className="display-name"
-              href={`https://github.com/${encodeURIComponent(post.author)}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {user?.name || post.author}
-
-              {verified && <VerifiedBadge />}
-            </a>
-
-            <span className="username">
-              @{post.author}
-            </span>
-
-            {post.createdAt && (
-              <>
-                <span className="dot">·</span>
-
-                <span className="date">
-                  {formatDate(post.createdAt)}
-                </span>
-              </>
-            )}
-          </div>
-
-          <button
-            className="icon-button"
-            aria-label="More options"
+    <article className="border-b border-base-300 p-5 transition-colors hover:bg-base-200/50">
+      <div className="flex gap-3">
+        <div className="shrink-0">
+          <a
+            href={`https://github.com/${encodeURIComponent(post.author)}`}
+            target="_blank"
+            rel="noreferrer"
           >
-            <MoreHorizontal size={19} />
-          </button>
-        </header>
-
-        <div
-          className="post-body markdown"
-          dangerouslySetInnerHTML={{
-            __html: marked.parse(post.body) as string
-          }}
-        />
-
-        {post.embed && (
-          <div className="post-image">
             <img
-              src={post.embed}
-              alt=""
-              loading="lazy"
+              className="size-11 rounded-full"
+              src={
+                user?.avatar_url ??
+                githubAvatar(post.author)
+              }
+              alt={`${post.author} avatar`}
             />
+          </a>
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <header className="flex items-start justify-between">
+            <div className="min-w-0">
+              <a
+                className="font-bold hover:underline"
+                href={`https://github.com/${encodeURIComponent(post.author)}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {user?.name || post.author}
+
+                {verified && (
+                  <span
+                    className="ml-1.5 inline-flex size-[17px] items-center justify-center rounded-full bg-primary text-[11px] font-black text-primary-content"
+                    title="Verified on Forums"
+                  >
+                    ✓
+                  </span>
+                )}
+              </a>
+
+              <span className="ml-1.5 text-sm text-base-content/50">
+                @{post.author}
+              </span>
+
+              {post.createdAt && (
+                <>
+                  <span className="mx-1.5 text-base-content/40">
+                    ·
+                  </span>
+
+                  <span className="text-sm text-base-content/50">
+                    {formatDate(post.createdAt)}
+                  </span>
+                </>
+              )}
+            </div>
+
+            <button
+              className="btn btn-ghost btn-sm btn-circle text-base-content/50"
+              aria-label="More options"
+            >
+              <MoreHorizontal size={19} />
+            </button>
+          </header>
+
+          <div
+            className="markdown mt-2"
+            dangerouslySetInnerHTML={{
+              __html: marked.parse(post.body) as string
+            }}
+          />
+
+          {post.embed && (
+            <div className="mt-3 overflow-hidden rounded-2xl border border-base-300">
+              <img
+                className="block max-h-[600px] w-full object-cover"
+                src={post.embed}
+                alt=""
+                loading="lazy"
+              />
+            </div>
+          )}
+
+          <div className="mt-3 flex max-w-[480px] justify-between">
+            <button className="btn btn-ghost btn-sm gap-2 text-base-content/50">
+              <MessageCircle size={18} />
+              0
+            </button>
+
+            <button className="btn btn-ghost btn-sm gap-2 text-base-content/50">
+              <Repeat2 size={18} />
+              0
+            </button>
+
+            <button
+              className={`btn btn-ghost btn-sm gap-2 ${
+                liked ? "text-error" : "text-base-content/50"
+              }`}
+              onClick={toggleLike}
+            >
+              <Heart
+                size={18}
+                fill={liked ? "currentColor" : "none"}
+              />
+              {likes}
+            </button>
+
+            <button className="btn btn-ghost btn-sm btn-circle text-base-content/50">
+              <Bookmark size={18} />
+            </button>
           </div>
-        )}
-
-        <div className="post-actions">
-          <button
-            className="post-action"
-            aria-label="Reply"
-          >
-            <MessageCircle size={18} />
-            <span>0</span>
-          </button>
-
-          <button
-            className="post-action"
-            aria-label="Repost"
-          >
-            <Repeat2 size={18} />
-            <span>0</span>
-          </button>
-
-          <button
-            className={`post-action ${
-              liked ? "liked" : ""
-            }`}
-            onClick={toggleLike}
-            aria-label="Like"
-          >
-            <Heart
-              size={18}
-              fill={liked ? "currentColor" : "none"}
-            />
-
-            <span>{likes}</span>
-          </button>
-
-          <button
-            className="post-action"
-            aria-label="Bookmark"
-          >
-            <Bookmark size={18} />
-          </button>
         </div>
       </div>
     </article>
@@ -222,36 +218,36 @@ function PostCard({
 
 function Sidebar() {
   return (
-    <aside className="sidebar">
-      <div className="logo">
+    <aside className="sticky top-0 hidden h-screen border-r border-base-300 p-4 md:block">
+      <div className="mb-8 px-3 text-2xl font-black tracking-tight">
         Forums
       </div>
 
-      <nav>
-        <a className="nav-item active">
+      <nav className="flex flex-col gap-1">
+        <a className="btn btn-ghost justify-start gap-4">
           <Home size={21} />
-          <span>Home</span>
+          Home
         </a>
 
-        <a className="nav-item">
+        <a className="btn btn-ghost justify-start gap-4">
           <Compass size={21} />
-          <span>Explore</span>
+          Explore
         </a>
 
-        <a className="nav-item">
+        <a className="btn btn-ghost justify-start gap-4">
           <Bookmark size={21} />
-          <span>Bookmarks</span>
+          Bookmarks
         </a>
       </nav>
 
       <a
-        className="github-link"
+        className="btn btn-ghost mt-6 justify-start gap-4"
         href="https://github.com"
         target="_blank"
         rel="noreferrer"
       >
         <Github size={19} />
-        <span>GitHub</span>
+        GitHub
       </a>
     </aside>
   );
@@ -307,98 +303,132 @@ function App() {
   });
 
   return (
-    <div className="app">
-      <Sidebar />
+    <div className="min-h-screen bg-base-100">
+      <div className="mx-auto grid min-h-screen max-w-[1280px] grid-cols-1 md:grid-cols-[80px_minmax(0,680px)] lg:grid-cols-[220px_minmax(0,680px)_300px]">
+        <Sidebar />
 
-      <main className="feed">
-        <div className="feed-header">
-          <div>
-            <h1>Home</h1>
-            <span>Latest posts</span>
+        <main className="min-w-0 border-base-300 md:border-r">
+          <div className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-base-300 bg-base-100/90 px-4 py-3 backdrop-blur-xl">
+            <div>
+              <h1 className="text-xl font-bold">
+                Home
+              </h1>
+
+              <span className="text-xs text-base-content/50">
+                Latest posts
+              </span>
+            </div>
+
+            <label className="input input-sm hidden w-48 items-center gap-2 sm:flex">
+              <Search size={17} />
+
+              <input
+                type="search"
+                placeholder="Search Forums"
+                value={search}
+                onChange={event =>
+                  setSearch(event.target.value)
+                }
+              />
+            </label>
           </div>
 
-          <div className="search">
-            <Search size={18} />
-
-            <input
-              value={search}
-              onChange={event =>
-                setSearch(event.target.value)
-              }
-              placeholder="Search Forums"
-              aria-label="Search Forums"
-            />
-          </div>
-        </div>
-
-        {loading && (
-          <div className="state">
-            Loading posts...
-          </div>
-        )}
-
-        {error && (
-          <div className="state error">
-            {error}
-          </div>
-        )}
-
-        {!loading &&
-          !error &&
-          filteredPosts.length === 0 && (
-            <div className="state">
-              No posts found.
+          {loading && (
+            <div className="flex justify-center py-20">
+              <span className="loading loading-spinner loading-md" />
             </div>
           )}
 
-        {!loading &&
-          !error &&
-          filteredPosts.map(post => (
-            <PostCard
-              key={post.id}
-              post={post}
-              verifiedUsers={verifiedUsers}
-            />
-          ))}
-      </main>
+          {error && (
+            <div className="alert alert-error m-4">
+              <span>{error}</span>
+            </div>
+          )}
 
-      <aside className="right-sidebar">
-        <section className="card">
-          <h2>About Forums</h2>
+          {!loading &&
+            !error &&
+            filteredPosts.length === 0 && (
+              <div className="py-20 text-center text-base-content/50">
+                No posts found.
+              </div>
+            )}
 
-          <p>
-            An open social platform powered by
-            GitHub.
-          </p>
+          {!loading &&
+            !error &&
+            filteredPosts.map(post => (
+              <PostCard
+                key={post.id}
+                post={post}
+                verifiedUsers={verifiedUsers}
+              />
+            ))}
+        </main>
 
-          <a
-            href="https://github.com"
-            target="_blank"
-            rel="noreferrer"
-          >
-            View on GitHub
-          </a>
-        </section>
+        <aside className="hidden p-5 lg:block">
+          <div className="card mb-4 border border-base-300 bg-base-200">
+            <div className="card-body">
+              <h2 className="card-title">
+                About Forums
+              </h2>
 
-        <section className="card">
-          <h2>Trending</h2>
+              <p className="text-sm text-base-content/60">
+                An open social platform powered by
+                GitHub.
+              </p>
 
-          <div className="trend">
-            <span>#Minecraft</span>
-            <small>Trending</small>
+              <div className="card-actions">
+                <a
+                  className="btn btn-primary btn-sm"
+                  href="https://github.com"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <Github size={16} />
+                  GitHub
+                </a>
+              </div>
+            </div>
           </div>
 
-          <div className="trend">
-            <span>#Godot</span>
-            <small>Trending</small>
-          </div>
+          <div className="card border border-base-300 bg-base-200">
+            <div className="card-body">
+              <h2 className="card-title">
+                Trending
+              </h2>
 
-          <div className="trend">
-            <span>#OpenSource</span>
-            <small>Trending</small>
+              <div className="py-2">
+                <div className="font-bold">
+                  #Minecraft
+                </div>
+
+                <div className="text-xs text-base-content/50">
+                  Trending
+                </div>
+              </div>
+
+              <div className="py-2">
+                <div className="font-bold">
+                  #Godot
+                </div>
+
+                <div className="text-xs text-base-content/50">
+                  Trending
+                </div>
+              </div>
+
+              <div className="py-2">
+                <div className="font-bold">
+                  #OpenSource
+                </div>
+
+                <div className="text-xs text-base-content/50">
+                  Trending
+                </div>
+              </div>
+            </div>
           </div>
-        </section>
-      </aside>
+        </aside>
+      </div>
     </div>
   );
 }
