@@ -30,10 +30,10 @@ interface GitHubUser {
   type: string;
 }
 
-const API = "https://api.github.com";
+const GITHUB_API = "https://api.github.com";
 
 function githubAvatar(username: string) {
-  return `https://github.com/${username}.png?size=128`;
+  return `https://github.com/${encodeURIComponent(username)}.png?size=128`;
 }
 
 async function getGitHubUser(
@@ -41,7 +41,7 @@ async function getGitHubUser(
 ): Promise<GitHubUser | null> {
   try {
     const response = await fetch(
-      `${API}/users/${encodeURIComponent(username)}`
+      `${GITHUB_API}/users/${encodeURIComponent(username)}`
     );
 
     if (!response.ok) {
@@ -55,7 +55,9 @@ async function getGitHubUser(
 }
 
 function formatDate(date?: string) {
-  if (!date) return "";
+  if (!date) {
+    return "";
+  }
 
   const value = new Date(date);
 
@@ -69,28 +71,33 @@ function formatDate(date?: string) {
   });
 }
 
-function markdown(body: string) {
-  return {
-    __html: marked.parse(body) as string
-  };
-}
-
 function VerifiedBadge() {
   return (
     <span
       className="verified"
-      title="Verified through GitHub"
-      aria-label="Verified through GitHub"
+      title="Verified on Forums"
+      aria-label="Verified on Forums"
     >
       ✓
     </span>
   );
 }
 
-function PostCard({ post }: { post: Post }) {
+function PostCard({
+  post,
+  verifiedUsers
+}: {
+  post: Post;
+  verifiedUsers: string[];
+}) {
   const [user, setUser] = useState<GitHubUser | null>(null);
   const [liked, setLiked] = useState(false);
   const [likes, setLikes] = useState(0);
+
+  const verified = verifiedUsers.some(
+    username =>
+      username.toLowerCase() === post.author.toLowerCase()
+  );
 
   useEffect(() => {
     getGitHubUser(post.author).then(setUser);
@@ -98,7 +105,7 @@ function PostCard({ post }: { post: Post }) {
 
   function toggleLike() {
     setLiked(value => {
-      setLikes(count => value ? count - 1 : count + 1);
+      setLikes(count => (value ? count - 1 : count + 1));
       return !value;
     });
   }
@@ -120,13 +127,13 @@ function PostCard({ post }: { post: Post }) {
           <div>
             <a
               className="display-name"
-              href={`https://github.com/${post.author}`}
+              href={`https://github.com/${encodeURIComponent(post.author)}`}
               target="_blank"
               rel="noreferrer"
             >
               {user?.name || post.author}
 
-              <VerifiedBadge />
+              {verified && <VerifiedBadge />}
             </a>
 
             <span className="username">
@@ -136,6 +143,7 @@ function PostCard({ post }: { post: Post }) {
             {post.createdAt && (
               <>
                 <span className="dot">·</span>
+
                 <span className="date">
                   {formatDate(post.createdAt)}
                 </span>
@@ -143,14 +151,19 @@ function PostCard({ post }: { post: Post }) {
             )}
           </div>
 
-          <button className="icon-button">
+          <button
+            className="icon-button"
+            aria-label="More options"
+          >
             <MoreHorizontal size={19} />
           </button>
         </header>
 
         <div
           className="post-body markdown"
-          dangerouslySetInnerHTML={markdown(post.body)}
+          dangerouslySetInnerHTML={{
+            __html: marked.parse(post.body) as string
+          }}
         />
 
         {post.embed && (
@@ -164,19 +177,28 @@ function PostCard({ post }: { post: Post }) {
         )}
 
         <div className="post-actions">
-          <button className="post-action">
+          <button
+            className="post-action"
+            aria-label="Reply"
+          >
             <MessageCircle size={18} />
             <span>0</span>
           </button>
 
-          <button className="post-action">
+          <button
+            className="post-action"
+            aria-label="Repost"
+          >
             <Repeat2 size={18} />
             <span>0</span>
           </button>
 
           <button
-            className={`post-action ${liked ? "liked" : ""}`}
+            className={`post-action ${
+              liked ? "liked" : ""
+            }`}
             onClick={toggleLike}
+            aria-label="Like"
           >
             <Heart
               size={18}
@@ -186,7 +208,10 @@ function PostCard({ post }: { post: Post }) {
             <span>{likes}</span>
           </button>
 
-          <button className="post-action">
+          <button
+            className="post-action"
+            aria-label="Bookmark"
+          >
             <Bookmark size={18} />
           </button>
         </div>
@@ -205,17 +230,17 @@ function Sidebar() {
       <nav>
         <a className="nav-item active">
           <Home size={21} />
-          Home
+          <span>Home</span>
         </a>
 
         <a className="nav-item">
           <Compass size={21} />
-          Explore
+          <span>Explore</span>
         </a>
 
         <a className="nav-item">
           <Bookmark size={21} />
-          Bookmarks
+          <span>Bookmarks</span>
         </a>
       </nav>
 
@@ -226,7 +251,7 @@ function Sidebar() {
         rel="noreferrer"
       >
         <Github size={19} />
-        GitHub
+        <span>GitHub</span>
       </a>
     </aside>
   );
@@ -234,21 +259,32 @@ function Sidebar() {
 
 function App() {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [verifiedUsers, setVerifiedUsers] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    fetch("./posts.json")
-      .then(response => {
+    Promise.all([
+      fetch("./posts.json").then(response => {
         if (!response.ok) {
           throw new Error("Could not load posts.json");
         }
 
         return response.json();
+      }),
+
+      fetch("./verified.json").then(response => {
+        if (!response.ok) {
+          throw new Error("Could not load verified.json");
+        }
+
+        return response.json();
       })
-      .then(data => {
-        setPosts(data);
+    ])
+      .then(([postsData, verifiedData]) => {
+        setPosts(postsData);
+        setVerifiedUsers(verifiedData);
         setLoading(false);
       })
       .catch(error => {
@@ -258,7 +294,11 @@ function App() {
   }, []);
 
   const filteredPosts = posts.filter(post => {
-    const query = search.toLowerCase();
+    const query = search.toLowerCase().trim();
+
+    if (!query) {
+      return true;
+    }
 
     return (
       post.body.toLowerCase().includes(query) ||
@@ -286,6 +326,7 @@ function App() {
                 setSearch(event.target.value)
               }
               placeholder="Search Forums"
+              aria-label="Search Forums"
             />
           </div>
         </div>
@@ -316,6 +357,7 @@ function App() {
             <PostCard
               key={post.id}
               post={post}
+              verifiedUsers={verifiedUsers}
             />
           ))}
       </main>
