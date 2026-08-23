@@ -1,0 +1,15 @@
+[
+  {
+    "id": "hello-world",
+    "author": "Intensed",
+    "body": "**It works!**\n\nEven with Markdown!",
+    "embed": "cdn/picture2.png",
+    "createdAt": "2026-08-23T18:00:00Z"
+  },
+  {
+    "id": "modcafe",
+    "author": "modcafe",
+    "body": "Forums can automatically load GitHub avatars and profiles.",
+    "createdAt": "2026-08-23T17:00:00Z"
+  }
+]
